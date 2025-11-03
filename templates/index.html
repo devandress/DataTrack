@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTrack - Análisis de Vehículos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 DataTrack - Análisis de Vehículos</h1>
+            <p>Analiza videos y cuenta vehículos por áreas personalizadas</p>
+        </header>
+
+        <main>
+            <!-- Panel de carga de video -->
+            <section class="upload-section">
+                <h2>📹 Cargar Video</h2>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="videoInput" accept="video/*" hidden>
+                    <div class="upload-placeholder">
+                        <span class="upload-icon">📁</span>
+                        <p>Arrastra un video aquí o haz clic para seleccionar</p>
+                        <small>Formatos soportados: MP4, AVI, MOV, MKV</small>
+                    </div>
+                </div>
+                <div class="video-info" id="videoInfo" style="display: none;">
+                    <h3>Información del Video</h3>
+                    <div class="info-grid">
+                        <div>📏 <strong>Resolución:</strong> <span id="videoResolution"></span></div>
+                        <div>⏱️ <strong>Duración:</strong> <span id="videoDuration"></span></div>
+                        <div>🎞️ <strong>FPS:</strong> <span id="videoFPS"></span></div>
+                        <div>📊 <strong>Frames:</strong> <span id="videoFrames"></span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de reproducción y edición -->
+            <section class="video-section" id="videoSection" style="display: none;">
+                <h2>🎬 Video y Áreas de Análisis</h2>
+                
+                <div class="video-controls">
+                    <button id="playPauseBtn" class="btn btn-primary">▶️ Reproducir</button>
+                    <button id="addAreaBtn" class="btn btn-secondary">➕ Agregar Área</button>
+                    <button id="clearAreasBtn" class="btn btn-danger">🗑️ Limpiar Áreas</button>
+                    <button id="analyzeBtn" class="btn btn-success">🔍 Analizar Video</button>
+                </div>
+
+                <div class="video-container">
+                    <video id="videoPlayer" controls style="display: none;">
+                        <source id="videoSource" src="" type="video/mp4">
+                        Tu navegador no soporta video HTML5.
+                    </video>
+                    <canvas id="videoCanvas"></canvas>
+                </div>
+
+                <div class="areas-panel">
+                    <h3>📍 Áreas Definidas</h3>
+                    <div id="areasList" class="areas-list">
+                        <p class="no-areas">No hay áreas definidas. Haz clic en "Agregar Área" para comenzar.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de resultados -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2>📊 Resultados del Análisis</h2>
+                
+                <div class="analysis-progress" id="analysisProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Analizando video...</p>
+                </div>
+
+                <div class="results-grid" id="resultsGrid">
+                    <!-- Los resultados se insertan aquí dinámicamente -->
+                </div>
+
+                <div class="results-details" id="resultsDetails">
+                    <!-- Detalles adicionales aquí -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal para nombrar áreas -->
+        <div class="modal" id="areaNameModal" style="display: none;">
+            <div class="modal-content">
+                <h3>Nombrar Área</h3>
+                <p>Ingresa un nombre para esta área de análisis:</p>
+                <input type="text" id="areaNameInput" placeholder="Ej: Carril Izquierdo, Entrada Principal">
+                <div class="modal-buttons">
+                    <button id="confirmAreaName" class="btn btn-primary">Confirmar</button>
+                    <button id="cancelAreaName" class="btn btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay de carga -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">Cargando...</p>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
