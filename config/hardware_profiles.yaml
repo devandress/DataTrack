@@ -1,0 +1,41 @@
+# DataTrack Configuration
+# Hardware optimization profiles
+
+profiles:
+  GPU_HIGH:
+    name: "GPU Alta Capacidad"
+    batch_size: 32
+    workers: 8
+    device: "cuda"
+    frame_skip: 1
+    confidence: 0.5
+    
+  GPU_LOW:
+    name: "GPU Baja Capacidad"
+    batch_size: 16
+    workers: 4
+    device: "cuda"
+    frame_skip: 2
+    confidence: 0.6
+    
+  CPU_HIGH:
+    name: "CPU Alta Capacidad"
+    batch_size: 8
+    workers: 6
+    device: "cpu"
+    frame_skip: 3
+    confidence: 0.65
+    
+  CPU_LOW:
+    name: "CPU Baja Capacidad"
+    batch_size: 4
+    workers: 2
+    device: "cpu"
+    frame_skip: 5
+    confidence: 0.7
+
+vehicle_classes:
+  car: "🚗 Carro"
+  motorcycle: "🏍️ Motocicleta"
+  bus: "🚌 Bus"
+  truck: "🚚 Camión"

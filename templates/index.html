@@ -3,107 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataTrack - Análisis de Vehículos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>DataTrack - Sistema de Conteo de Vehículos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 */
+            background: #000;
+        }
+        
+        .video-container video,
+        .video-container canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .polygon-tool {
+            cursor: crosshair;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            transition: width 0.3s ease;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🚗 DataTrack - Análisis de Vehículos</h1>
-            <p>Analiza videos y cuenta vehículos por áreas personalizadas</p>
-        </header>
-
-        <main>
-            <!-- Panel de carga de video -->
-            <section class="upload-section">
-                <h2>📹 Cargar Video</h2>
-                <div class="upload-area" id="uploadArea">
-                    <input type="file" id="videoInput" accept="video/*" hidden>
-                    <div class="upload-placeholder">
-                        <span class="upload-icon">📁</span>
-                        <p>Arrastra un video aquí o haz clic para seleccionar</p>
-                        <small>Formatos soportados: MP4, AVI, MOV, MKV</small>
+<body class="bg-gray-900 text-gray-100">
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-gray-800 border-b border-gray-700 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-blue-400">
+                            🚗 DataTrack
+                        </h1>
+                        <p class="text-gray-400 text-sm">Sistema de Conteo de Vehículos con YOLO11</p>
                     </div>
-                </div>
-                <div class="video-info" id="videoInfo" style="display: none;">
-                    <h3>Información del Video</h3>
-                    <div class="info-grid">
-                        <div>📏 <strong>Resolución:</strong> <span id="videoResolution"></span></div>
-                        <div>⏱️ <strong>Duración:</strong> <span id="videoDuration"></span></div>
-                        <div>🎞️ <strong>FPS:</strong> <span id="videoFPS"></span></div>
-                        <div>📊 <strong>Frames:</strong> <span id="videoFrames"></span></div>
+                    <div id="hardwareInfo" class="text-right text-sm text-gray-300">
+                        <p>Cargando información de hardware...</p>
                     </div>
-                </div>
-            </section>
-
-            <!-- Panel de reproducción y edición -->
-            <section class="video-section" id="videoSection" style="display: none;">
-                <h2>🎬 Video y Áreas de Análisis</h2>
-                
-                <div class="video-controls">
-                    <button id="playPauseBtn" class="btn btn-primary">▶️ Reproducir</button>
-                    <button id="addAreaBtn" class="btn btn-secondary">➕ Agregar Área</button>
-                    <button id="clearAreasBtn" class="btn btn-danger">🗑️ Limpiar Áreas</button>
-                    <button id="analyzeBtn" class="btn btn-success">🔍 Analizar Video</button>
-                </div>
-
-                <div class="video-container">
-                    <video id="videoPlayer" controls style="display: none;">
-                        <source id="videoSource" src="" type="video/mp4">
-                        Tu navegador no soporta video HTML5.
-                    </video>
-                    <canvas id="videoCanvas"></canvas>
-                </div>
-
-                <div class="areas-panel">
-                    <h3>📍 Áreas Definidas</h3>
-                    <div id="areasList" class="areas-list">
-                        <p class="no-areas">No hay áreas definidas. Haz clic en "Agregar Área" para comenzar.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Panel de resultados -->
-            <section class="results-section" id="resultsSection" style="display: none;">
-                <h2>📊 Resultados del Análisis</h2>
-                
-                <div class="analysis-progress" id="analysisProgress" style="display: none;">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <p id="progressText">Analizando video...</p>
-                </div>
-
-                <div class="results-grid" id="resultsGrid">
-                    <!-- Los resultados se insertan aquí dinámicamente -->
-                </div>
-
-                <div class="results-details" id="resultsDetails">
-                    <!-- Detalles adicionales aquí -->
-                </div>
-            </section>
-        </main>
-
-        <!-- Modal para nombrar áreas -->
-        <div class="modal" id="areaNameModal" style="display: none;">
-            <div class="modal-content">
-                <h3>Nombrar Área</h3>
-                <p>Ingresa un nombre para esta área de análisis:</p>
-                <input type="text" id="areaNameInput" placeholder="Ej: Carril Izquierdo, Entrada Principal">
-                <div class="modal-buttons">
-                    <button id="confirmAreaName" class="btn btn-primary">Confirmar</button>
-                    <button id="cancelAreaName" class="btn btn-secondary">Cancelar</button>
                 </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Overlay de carga -->
-        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-            <div class="loading-spinner"></div>
-            <p id="loadingText">Cargando...</p>
-        </div>
+        <!-- Main Content -->
+        <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Video Panel -->
+                <div class="lg:col-span-2">
+                    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                        <!-- Video Upload -->
+                        <div id="uploadArea" class="video-container bg-gray-900 border-2 border-dashed border-gray-600 hover:border-blue-400 transition flex items-center justify-center cursor-pointer">
+                            <div class="text-center">
+                                <div class="text-4xl mb-2">📹</div>
+                                <p class="text-gray-300">Arrastra un video aquí o haz clic para seleccionar</p>
+                                <p class="text-gray-500 text-sm mt-2">Formatos: MP4, AVI, MOV, MKV (máx. 2GB)</p>
+                            </div>
+                            <input type="file" id="videoInput" accept="video/*" class="hidden">
+                        </div>
+                        
+                        <!-- Video Display -->
+                        <div id="videoDisplay" class="video-container hidden">
+                            <video id="videoElement" controls></video>
+                            <canvas id="polygonCanvas" class="hidden polygon-tool"></canvas>
+                        </div>
+                        
+                        <!-- Video Controls -->
+                        <div id="videoControls" class="hidden bg-gray-700 p-4 border-t border-gray-600">
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Herramientas de Dibujo</label>
+                                    <div class="flex gap-2">
+                                        <button id="drawPolygonBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-medium text-sm transition">
+                                            ✏️ Dibujar Polígono
+                                        </button>
+                                        <button id="clearPolygonBtn" class="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-medium text-sm transition">
+                                            ✕ Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Áreas Dibujadas: <span id="polygonCount">0</span></label>
+                                    <div id="polygonsList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Control Panel -->
+                <div class="bg-gray-800 rounded-lg shadow-lg p-6 h-fit">
+                    <!-- Parametros de Procesamiento -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold border-b border-gray-600 pb-2">⚙️ Configuración</h3>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Confianza Mínima: <span id="confValue">0.50</span>
+                            </label>
+                            <input type="range" id="confidenceSlider" min="0" max="100" value="50" class="w-full">
+                            <p class="text-gray-400 text-xs mt-1">Detecta solo objetos con mayor confianza</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">
+                                Skip de Frames: <span id="skipValue">1</span>
+                            </label>
+                            <input type="range" id="frameSkipSlider" min="1" max="10" value="1" class="w-full">
+                            <p class="text-gray-400 text-xs mt-1">Procesar cada N frames (más rápido)</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Tipos de Vehículos</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="vehicle-class" value="car" checked>
+                                    <span>🚗 Carros</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="vehicle-class" value="motorcycle" checked>
+                                    <span>🏍️ Motocicletas</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="vehicle-class" value="bus" checked>
+                                    <span>🚌 Buses</span>
+                                </label>
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="vehicle-class" value="truck" checked>
+                                    <span>🚚 Camiones</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Process Button -->
+                        <button id="processBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 font-bold py-3 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            🎬 Iniciar Conteo
+                        </button>
+                        
+                        <!-- Progress -->
+                        <div id="progressContainer" class="hidden">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span>Procesando...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden mt-8">
+                <div class="bg-gray-800 rounded-lg shadow-lg p-6">
+                    <h2 class="text-2xl font-bold mb-6 border-b border-gray-600 pb-3">📊 Resultados</h2>
+                    
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4">
+                            <p class="text-gray-100 text-sm">Total de Vehículos</p>
+                            <p id="totalVehicles" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4">
+                            <p class="text-gray-100 text-sm">Carros</p>
+                            <p id="carCount" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-4">
+                            <p class="text-gray-100 text-sm">Motocicletas</p>
+                            <p id="motoCount" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4">
+                            <p class="text-gray-100 text-sm">Otros</p>
+                            <p id="otherCount" class="text-3xl font-bold">0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts and Details -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="font-bold mb-4">Distribución por Tipo</h3>
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="font-bold mb-4">Resumen de Regiones</h3>
+                            <div id="regionsSummary" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Buttons -->
+                    <div class="mt-6 flex gap-3">
+                        <button id="exportCsvBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-medium transition">
+                            📥 Descargar CSV
+                        </button>
+                        <button id="exportJsonBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded font-medium transition">
+                            📊 Descargar JSON
+                        </button>
+                        <button id="clearResultsBtn" class="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-medium transition">
+                            ✕ Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 border-t border-gray-700 mt-8">
+            <div class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-400 text-sm">
+                <p>DataTrack © 2024 | Sistema de Conteo de Vehículos con YOLO11</p>
+                <p class="mt-2">Hecho por Fernando Andrés Alemán Escobedo</p>
+            </div>
+        </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
