@@ -24,6 +24,10 @@ class VideoProcessor:
             7: 'truck'
         }
         
+        # Pre-compilar modelo para GPU
+        dummy_frame = np.zeros((640, 384, 3), dtype=np.uint8)
+        self.model.predict(dummy_frame, conf=0.5, verbose=False)
+        
         self.track_history = defaultdict(lambda: [])
     
     def process_video(self, video_path, regions=None, conf_threshold=0.5, 
@@ -47,6 +51,13 @@ class VideoProcessor:
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         
+        # Redimensionar para procesamiento más rápido si es muy grande
+        scale_factor = 1.0
+        if width > 1280 or height > 720:
+            scale_factor = 0.5
+            width = int(width * scale_factor)
+            height = int(height * scale_factor)
+        
         results = {
             'total_frames': total_frames,
             'fps': fps,
@@ -54,15 +65,20 @@ class VideoProcessor:
             'height': height,
             'total_vehicles': 0,
             'vehicles_by_type': {},
-            'vehicles_by_type_unique': {},  # Vehículos únicos por tipo
+            'vehicles_by_type_unique': {},
             'vehicles_by_region': defaultdict(lambda: {'count': 0, 'types': {}, 'unique_ids': set()}),
             'timeline': []
         }
         
         frame_count = 0
-        vehicle_ids = set()  # Track IDs globales únicos
-        vehicle_ids_by_type = defaultdict(set)  # Track IDs por tipo de vehículo
-        vehicle_detections_by_type = defaultdict(int)  # Conteo de detecciones por tipo
+        vehicle_ids = set()
+        vehicle_ids_by_type = defaultdict(set)
+        vehicle_detections_by_type = defaultdict(int)
+        
+        # Pre-compilar regiones si existen
+        polygon_points = None
+        if regions:
+            polygon_points = [np.array([region], np.int32) for region in regions]
         
         while cap.isOpened():
             success, frame = cap.read()
@@ -75,38 +91,49 @@ class VideoProcessor:
             if frame_count % frame_skip != 0:
                 continue
             
-            # Detectar
-            detections = self.model.track(frame, persist=True, conf=conf_threshold)
+            # Redimensionar si es necesario
+            if scale_factor < 1.0:
+                frame = cv2.resize(frame, (width, height), interpolation=cv2.INTER_LINEAR)
+            
+            # Detectar con imgsz optimizado
+            detections = self.model.track(
+                frame, 
+                persist=True, 
+                conf=conf_threshold,
+                imgsz=384,  # Tamaño optimizado para velocidad
+                verbose=False
+            )
             
             if detections and len(detections) > 0:
                 result = detections[0]
                 
                 if result.boxes is not None and len(result.boxes) > 0:
-                    for box, track_id, class_id in zip(
-                        result.boxes.xyxy.cpu(),
-                        result.boxes.id.int().cpu() if result.boxes.id is not None else [],
-                        result.boxes.cls.int().cpu()
-                    ):
+                    boxes_xyxy = result.boxes.xyxy.cpu().numpy()
+                    boxes_id = result.boxes.id.int().cpu().numpy() if result.boxes.id is not None else []
+                    boxes_cls = result.boxes.cls.int().cpu().numpy()
+                    
+                    # Vectorizar procesamiento
+                    for i, class_id in enumerate(boxes_cls):
                         class_id = int(class_id)
                         if class_id not in self.vehicle_classes:
                             continue
                         
-                        track_id = int(track_id)
+                        track_id = int(boxes_id[i]) if i < len(boxes_id) else -1
+                        if track_id == -1:
+                            continue
+                            
                         vehicle_type = self.vehicle_classes[class_id]
                         
-                        # Agregar a conjunto global
                         vehicle_ids.add(track_id)
-                        
-                        # Agregar a conjunto por tipo
                         vehicle_ids_by_type[vehicle_type].add(track_id)
-                        
-                        # Contar detecciones (instancias)
                         vehicle_detections_by_type[vehicle_type] += 1
                         
-                        # Contar por región si existe
-                        if regions:
+                        # Verificar regiones solo si existen
+                        if regions and polygon_points:
+                            box = boxes_xyxy[i]
+                            point = (box[0], box[1])
                             for idx, region in enumerate(regions):
-                                if self._point_in_polygon(box[:2], region):
+                                if self._point_in_polygon_fast(point, region):
                                     results['vehicles_by_region'][f'region_{idx}']['count'] += 1
                                     results['vehicles_by_region'][f'region_{idx}']['unique_ids'].add(track_id)
                                     results['vehicles_by_region'][f'region_{idx}']['types'][vehicle_type] = \
@@ -131,15 +158,15 @@ class VideoProcessor:
         for region_key in results['vehicles_by_region']:
             unique_count = len(results['vehicles_by_region'][region_key]['unique_ids'])
             results['vehicles_by_region'][region_key]['unique_count'] = unique_count
-            del results['vehicles_by_region'][region_key]['unique_ids']  # No serializable
+            del results['vehicles_by_region'][region_key]['unique_ids']
         
         results['vehicles_by_region'] = dict(results['vehicles_by_region'])
         
         return results
     
     @staticmethod
-    def _point_in_polygon(point, polygon):
-        """Verifica si un punto está dentro de un polígono"""
+    def _point_in_polygon_fast(point, polygon):
+        """Versión vectorizada rápida de detección punto en polígono"""
         x, y = point
         n = len(polygon)
         inside = False
@@ -157,6 +184,11 @@ class VideoProcessor:
             p1x, p1y = p2x, p2y
         
         return inside
+
+    @staticmethod
+    def _point_in_polygon(point, polygon):
+        """Verifica si un punto está dentro de un polígono"""
+        return VideoProcessor._point_in_polygon_fast(point, polygon)
     
     def annotate_frame(self, frame, detections, regions=None):
         """Anotación de frame con detecciones y regiones"""
