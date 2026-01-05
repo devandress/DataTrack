@@ -358,20 +358,28 @@ class DataTrackApp {
     
     displayResults() {
         const results = this.currentResults;
+        if (!results) {
+            console.error('No results available');
+            return;
+        }
+        
+        // Validar que existan los objetos necesarios
+        const vehiclesByTypeUnique = results.vehicles_by_type_unique || {};
+        const vehiclesByType = results.vehicles_by_type || {};
         
         // Update summary - Mostrar ÚNICOS
-        document.getElementById('totalVehicles').textContent = results.total_vehicles;
-        document.getElementById('carCount').textContent = results.vehicles_by_type_unique.car || 0;
-        document.getElementById('motoCount').textContent = results.vehicles_by_type_unique.motorcycle || 0;
+        document.getElementById('totalVehicles').textContent = results.total_vehicles || 0;
+        document.getElementById('carCount').textContent = vehiclesByTypeUnique.car || 0;
+        document.getElementById('motoCount').textContent = vehiclesByTypeUnique.motorcycle || 0;
         
-        const otherCount = (results.vehicles_by_type_unique.bus || 0) + (results.vehicles_by_type_unique.truck || 0);
+        const otherCount = (vehiclesByTypeUnique.bus || 0) + (vehiclesByTypeUnique.truck || 0);
         document.getElementById('otherCount').textContent = otherCount;
         
         // Update chart con datos ÚNICOS
-        this.updateChart(results.vehicles_by_type_unique);
+        this.updateChart(vehiclesByTypeUnique);
         
         // Update regions
-        this.updateRegionsSummary(results.vehicles_by_region);
+        this.updateRegionsSummary(results.vehicles_by_region || {});
         
         // Mostrar información adicional sobre detecciones vs únicos
         this.showDetectionStats(results);
