@@ -1,0 +1,230 @@
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║                    🎯 GUÍA DE 10 MINUTOS 🎯                     ║
+║                                                                   ║
+║              Compilar .EXE para tu amigo - SIMPLE                ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+
+PASO 1: VERIFICAR QUE FUNCIONA EN LINUX (2 min)
+═════════════════════════════════════════════════════════════════════
+
+Abre terminal en /home/andy/Escritorio/DataTrack
+
+Ejecuta:
+
+    python3 app.py
+
+Debe pasar esto:
+
+    ✓ Ver mensaje [HARDWARE] {...}
+    ✓ Ver "🚀 DataTrack iniciado"
+    ✓ Se abre navegador automáticamente
+    ✓ Ver interfaz con colores azul marino y dorado
+    ✓ Poder cargar un video
+    ✓ Poder dibujar un polígono
+
+Si TODO OK → Continúa
+Si algo falla → Revisa errores y reporta
+
+Termina: Ctrl+C
+
+
+════════════════════════════════════════════════════════════════════
+
+PASO 2: COPIAR A WINDOWS (5 min)
+═════════════════════════════════════════════════════════════════════
+
+Copia esta carpeta COMPLETA a una PC Windows:
+
+    /home/andy/Escritorio/DataTrack/
+
+En Windows, ponla en: C:\programas\DataTrack\ (o donde prefieras)
+
+IMPORTANTE - Verifica que tengas estos archivos:
+
+    ✓ build_exe.bat
+    ✓ compress_portable.bat
+    ✓ app.py
+    ✓ modules/
+    ✓ templates/
+    ✓ static/
+    ✓ config/
+    ✓ yolo11n.pt (MÍNIMO este)
+
+
+════════════════════════════════════════════════════════════════════
+
+PASO 3: COMPILAR EN WINDOWS (20 min - automático)
+═════════════════════════════════════════════════════════════════════
+
+En la PC Windows:
+
+1. Abre CMD (símbolo del sistema)
+
+2. Navega a la carpeta:
+
+    cd C:\programas\DataTrack
+
+3. Ejecuta:
+
+    build_exe.bat
+
+4. ESPERA (puede tomar 15-20 minutos)
+
+5. Te aparecerá:
+
+    ¿Qué deseas hacer ahora?
+    1 - Nada
+    2 - Crear carpeta portable
+    3 - Crear instalador
+
+6. Escribe: 2 y presiona Enter
+
+7. Espera a que termine
+
+
+════════════════════════════════════════════════════════════════════
+
+PASO 4: COMPRIMIR EN ZIP (2 min)
+═════════════════════════════════════════════════════════════════════
+
+En la misma ventana CMD, ejecuta:
+
+    compress_portable.bat
+
+Resultado:
+    ✓ Se crea: DataTrack-Portable.zip (≈2 GB)
+
+
+════════════════════════════════════════════════════════════════════
+
+PASO 5: COMPARTIR CON TU AMIGO (1 min)
+═════════════════════════════════════════════════════════════════════
+
+Ahora tienes: DataTrack-Portable.zip
+
+Opciones para compartir:
+
+  A) Drive (Google Drive, Dropbox, etc)
+  B) WeTransfer (para archivos grandes)
+  C) USB externo
+  D) Email (si el cliente de email lo permite)
+
+Envía el archivo a tu amigo
+
+
+════════════════════════════════════════════════════════════════════
+
+PASO 6: TU AMIGO RECIBE Y EJECUTA (2 min)
+═════════════════════════════════════════════════════════════════════
+
+Tu amigo recibe: DataTrack-Portable.zip
+
+1. Extrae la carpeta (click derecho → Extraer)
+
+2. Se crea: DataTrack-Portable/
+
+3. Busca: DataTrack.exe
+
+4. Haz DOBLE-CLICK en DataTrack.exe
+
+5. Se abre una ventana negra (consola)
+
+6. Espera 2-3 segundos...
+
+7. Se abre navegador automáticamente: http://localhost:5000
+
+8. ¡LISTO! Ya puede usar DataTrack
+
+
+════════════════════════════════════════════════════════════════════
+
+🎯 RESUMEN DE COMANDOS
+═════════════════════════════════════════════════════════════════════
+
+En Linux (ahora):
+    $ python3 app.py
+    [Verificar que funciona]
+    Ctrl+C
+
+En Windows (después):
+    > cd C:\programas\DataTrack
+    > build_exe.bat
+    [Elige opción 2]
+    [Espera 20 minutos]
+    > compress_portable.bat
+    [Copia DataTrack-Portable.zip]
+
+
+════════════════════════════════════════════════════════════════════
+
+❓ SI ALGO FALLA
+═════════════════════════════════════════════════════════════════════
+
+"Python no encontrado en Windows"
+→ Instala Python desde python.org
+→ Importante: MARCA "Add Python to PATH"
+
+"build_exe.bat no reconoce"
+→ Abre CMD como ADMINISTRADOR
+→ Verifica que estés en la carpeta correcta
+
+"Tarda mucho en compilar"
+→ ES NORMAL - Espera 20 minutos
+→ No cierres la ventana
+
+"No se abre DataTrack-Portable"
+→ Que build_exe.bat haya terminado correctamente
+→ Que hayas elegido opción 2 en el menú
+
+
+════════════════════════════════════════════════════════════════════
+
+📦 QUÉ RECIBE TU AMIGO
+═════════════════════════════════════════════════════════════════════
+
+DataTrack-Portable.zip (≈2 GB)
+        ↓
+Extrae
+        ↓
+DataTrack-Portable/
+├── DataTrack.exe         ← Ejecuta ESTO
+├── yolo11n.pt
+├── config/
+├── templates/
+├── static/
+└── (todo lo necesario)
+        ↓
+Doble-click en DataTrack.exe
+        ↓
+Navegador se abre automáticamente
+        ↓
+¡LISTO PARA USAR!
+
+
+════════════════════════════════════════════════════════════════════
+
+💾 TAMAÑO APROXIMADO
+═════════════════════════════════════════════════════════════════════
+
+Solo DataTrack.exe:     800 MB - 1.2 GB
+DataTrack-Portable:     1.5 - 2 GB
+Comprimido ZIP:         1.5 - 2 GB (no comprime mucho)
+
+Para reducir tamaño:
+    → Usa solo yolo11n.pt (modelo pequeño)
+    → Será ≈1.5 GB
+
+
+════════════════════════════════════════════════════════════════════
+
+✨ ¡LISTO!
+
+Tienes TODO listo para compilar y compartir.
+
+Comienza con PASO 1 en Linux.
+
+════════════════════════════════════════════════════════════════════

@@ -1,0 +1,209 @@
+╔════════════════════════════════════════════════════════════════╗
+║              GUÍA RÁPIDA: COMPILAR Y COMPARTIR .EXE            ║
+║                      Solo 5 comandos                           ║
+╚════════════════════════════════════════════════════════════════╝
+
+⚡ RESUMEN EN 3 PASOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 1: En Linux (verifica que todo funcione)
+   $ python3 app.py
+   → Se abre navegador en http://localhost:5000
+   → Prueba cargar un video y dibujar
+   → Si todo OK → Continúa
+
+PASO 2: En Windows (compila el EXE)
+   > build_exe.bat
+   → Espera 15-20 minutos
+   → Elige opción 2 (carpeta portable)
+   → Se crea: DataTrack-Portable/
+
+PASO 3: Compartir con tu amigo
+   > compress_portable.bat
+   → Se crea: DataTrack-Portable.zip
+   → Envía este archivo a tu amigo
+   → Tu amigo: extrae ZIP → ejecuta DataTrack.exe → ¡LISTO!
+
+════════════════════════════════════════════════════════════════
+
+📦 ARCHIVOS QUE NECESITAS EN WINDOWS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Copia TODA esta carpeta a Windows:
+
+DataTrack/
+├── app.py
+├── build_exe.bat                ← Ejecuta esto primero
+├── compress_portable.bat         ← Ejecuta esto después
+├── modules/
+├── static/
+├── templates/
+├── config/
+├── yolo11n.pt                   ← IMPORTANTE
+├── yolo11s.pt (opcional)
+├── yolo11m.pt (opcional)
+└── yolo11l.pt (opcional)
+
+════════════════════════════════════════════════════════════════
+
+🚀 INSTRUCCIONES DETALLADAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EN LINUX (Esta máquina)
+──────────────────────
+
+1. Terminal → Navega a la carpeta DataTrack
+2. Ejecuta:
+   
+   python3 app.py
+
+3. Verifica que:
+   ✓ Se ve [HARDWARE] {...}
+   ✓ Se ve "🚀 DataTrack iniciado"
+   ✓ Se abre navegador automáticamente
+   ✓ Se ve la interfaz web con colores Tecnm
+   ✓ Puedes cargar un video y dibujar un polígono
+
+4. Si todo OK:
+   - Presiona Ctrl+C para terminar
+   - Copia TODA la carpeta a un USB o comparte por Drive
+   - Lleva a Windows
+
+EN WINDOWS (PC destino)
+──────────────────────
+
+1. Pega la carpeta DataTrack en una ubicación (ej: C:\programas\)
+2. Abre CMD (símbolo del sistema)
+3. Navega a la carpeta:
+   
+   cd "C:\programas\DataTrack"
+
+4. Ejecuta:
+
+   build_exe.bat
+
+5. Espera (MUCHO TIEMPO - 15 a 20 minutos)
+   
+   Mientras esperas:
+   - Se instalará PyInstaller automáticamente
+   - Se compilará todo con PyInstaller
+   - Verás un menú de opciones
+
+6. Cuando veas el menú:
+
+   ¿Qué deseas hacer ahora?
+   
+   1 - Nada (solo crear el EXE)
+   2 - Crear carpeta portable (RECOMENDADO)
+   3 - Crear instalador MSI
+   
+   Elige: 2
+
+7. Espera a que termine (crea carpeta DataTrack-Portable/)
+
+8. OPCIONAL - Comprimir en ZIP:
+   
+   compress_portable.bat
+
+9. Resultados:
+
+   ✓ Si elegiste opción 2:
+     - Carpeta: DataTrack-Portable/
+     - Archivo ZIP: DataTrack-Portable.zip
+
+   ✓ Compartir el ZIP o la carpeta con tu amigo
+
+════════════════════════════════════════════════════════════════
+
+👥 TU AMIGO RECIBE (Opción A: ZIP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Descarga: DataTrack-Portable.zip (~2 GB)
+2. Click derecho → Extraer aquí
+3. Se crea carpeta: DataTrack-Portable/
+4. Doble-click en: DataTrack.exe
+5. Espera 2-3 segundos
+6. Se abre navegador: http://localhost:5000
+7. ¡LISTO PARA USAR!
+
+════════════════════════════════════════════════════════════════
+
+👥 TU AMIGO RECIBE (Opción B: Solo EXE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Si solo le pasas: dist/DataTrack.exe
+
+1. Recibe el archivo: DataTrack.exe (~1.5 GB)
+2. Doble-click en él
+3. Se abre navegador automáticamente
+4. ¡LISTO!
+
+(Pero RECOMENDAMOS opción A para que sea más ordenado)
+
+════════════════════════════════════════════════════════════════
+
+🔧 SI ALGO SALE MAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Error: Python no encontrado"
+→ Instala Python desde https://python.org
+→ Importante: Marca "Add Python to PATH"
+
+"Error: Fallo la compilación"
+→ Cierra cualquier antivirus temporal
+→ Intenta de nuevo
+
+"El script no ejecuta"
+→ Abre CMD como Administrador
+→ Navega a la carpeta
+→ Ejecuta: build_exe.bat
+
+"Tarda mucho"
+→ ES NORMAL - Espera 20 minutos
+→ No cierres la ventana
+
+"No se crea DataTrack-Portable"
+→ Elige bien la opción 2 en el menú
+→ O manualmente copia dist/DataTrack.exe a carpeta nueva
+
+════════════════════════════════════════════════════════════════
+
+📋 CHECKLIST ANTES DE COMPILAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+En Linux:
+  ☐ app.py inicia sin errores
+  ☐ Navegador se abre automáticamente
+  ☐ Se pueden dibujar polígonos
+  ☐ Se puede cargar un video pequeño
+
+En Windows:
+  ☐ Python instalado (python --version)
+  ☐ Carpeta DataTrack copiada completa
+  ☐ Archivo build_exe.bat existe
+  ☐ Modelos YOLO están (yolo11n.pt mínimo)
+
+════════════════════════════════════════════════════════════════
+
+💡 NOTAS IMPORTANTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+• El archivo es GRANDE (1.5-3 GB) porque incluye todo (Python + ML)
+• Es NORMAL que tarde 15-20 minutos compilando
+• No interrumpas el proceso (dejaría el proyecto incompleto)
+• Si descargas solo yolo11n.pt, es el modelo más rápido pero menos preciso
+• Tu amigo NO necesita instalar Python ni nada
+• Funciona OFFLINE (no necesita internet)
+
+════════════════════════════════════════════════════════════════
+
+¿LISTO? 
+
+1. Verifica en Linux
+2. Ve a Windows
+3. Ejecuta: build_exe.bat
+4. Elige opción 2
+5. Espera
+6. ¡Comparte el archivo con tu amigo!
+
+════════════════════════════════════════════════════════════════

@@ -3,246 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataTrack - Sistema de Conteo de Vehículos</title>
+    <title>DataTrack</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .video-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 */
-            background: #000;
+        :root {
+            --blue: #003D7A;
+            --gold: #FFD700;
+            --dark: #0f172a;
+            --card: #1e293b;
+            --border: #334155;
         }
-        
-        .video-container video,
-        .video-container canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .polygon-tool {
-            cursor: crosshair;
-        }
-        
-        .progress-bar {
-            height: 4px;
-            background: #e5e7eb;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #3b82f6, #10b981);
-            transition: width 0.3s ease;
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.3s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        body { background: var(--dark); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 0.75rem; }
+        .btn-primary { background: var(--blue); color: #fff; }
+        .btn-primary:hover { background: #002952; }
+        .btn-gold { background: var(--gold); color: var(--blue); font-weight: 600; }
+        .btn-gold:hover { background: #E6C200; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn-danger:hover { background: #b91c1c; }
+        .video-box { position: relative; width: 100%; padding-bottom: 56.25%; background: #000; border-radius: 0.5rem; overflow: hidden; }
+        .video-box video, .video-box canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .progress-track { height: 6px; background: #334155; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold)); transition: width 0.3s; }
+        .tab-active { border-bottom: 2px solid var(--gold); color: var(--gold); }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #94a3b8; }
+        .tab-inactive:hover { color: #e2e8f0; }
+        .record-row { transition: background 0.15s; }
+        .record-row:hover { background: #334155; }
+        .fade-in { animation: fadeIn 0.25s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .badge-ok { background: #065f46; color: #6ee7b7; }
+        .badge-err { background: #7f1d1d; color: #fca5a5; }
+        .badge-proc { background: #1e3a5f; color: #93c5fd; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100">
-    <div class="min-h-screen flex flex-col">
-        <!-- Header -->
-        <header class="bg-gray-800 border-b border-gray-700 shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 py-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h1 class="text-3xl font-bold text-blue-400">
-                            🚗 DataTrack
-                        </h1>
-                        <p class="text-gray-400 text-sm">Sistema de Conteo de Vehículos con YOLO11</p>
-                    </div>
-                    <div id="hardwareInfo" class="text-right text-sm text-gray-300">
-                        <p>Cargando información de hardware...</p>
-                    </div>
-                </div>
-            </div>
-        </header>
+<body class="text-gray-100 min-h-screen flex flex-col">
 
-        <!-- Main Content -->
-        <main class="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- Video Panel -->
-                <div class="lg:col-span-2">
-                    <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-                        <!-- Video Upload -->
-                        <div id="uploadArea" class="video-container bg-gray-900 border-2 border-dashed border-gray-600 hover:border-blue-400 transition flex items-center justify-center cursor-pointer">
-                            <div class="text-center">
-                                <div class="text-4xl mb-2">📹</div>
-                                <p class="text-gray-300">Arrastra un video aquí o haz clic para seleccionar</p>
-                                <p class="text-gray-500 text-sm mt-2">Formatos: MP4, AVI, MOV, MKV (máx. 2GB)</p>
-                            </div>
-                            <input type="file" id="videoInput" accept="video/*" class="hidden">
-                        </div>
-                        
-                        <!-- Video Display -->
-                        <div id="videoDisplay" class="video-container hidden">
-                            <video id="videoElement" controls></video>
-                            <canvas id="polygonCanvas" class="hidden polygon-tool"></canvas>
-                        </div>
-                        
-                        <!-- Video Controls -->
-                        <div id="videoControls" class="hidden bg-gray-700 p-4 border-t border-gray-600">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Herramientas de Dibujo</label>
-                                    <div class="flex gap-2">
-                                        <button id="drawPolygonBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-medium text-sm transition">
-                                            ✏️ Dibujar Polígono
-                                        </button>
-                                        <button id="clearPolygonBtn" class="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-medium text-sm transition">
-                                            ✕ Limpiar
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium mb-2">Áreas Dibujadas: <span id="polygonCount">0</span></label>
-                                    <div id="polygonsList" class="space-y-1 max-h-32 overflow-y-auto"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Control Panel -->
-                <div class="bg-gray-800 rounded-lg shadow-lg p-6 h-fit">
-                    <!-- Parametros de Procesamiento -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold border-b border-gray-600 pb-2">⚙️ Configuración</h3>
-                        
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                Confianza Mínima: <span id="confValue">0.50</span>
-                            </label>
-                            <input type="range" id="confidenceSlider" min="0" max="100" value="50" class="w-full">
-                            <p class="text-gray-400 text-xs mt-1">Detecta solo objetos con mayor confianza</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium mb-2">
-                                Skip de Frames: <span id="skipValue">1</span>
-                            </label>
-                            <input type="range" id="frameSkipSlider" min="1" max="10" value="1" class="w-full">
-                            <p class="text-gray-400 text-xs mt-1">Procesar cada N frames (más rápido)</p>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium mb-2">Tipos de Vehículos</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" class="vehicle-class" value="car" checked>
-                                    <span>🚗 Carros</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" class="vehicle-class" value="motorcycle" checked>
-                                    <span>🏍️ Motocicletas</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" class="vehicle-class" value="bus" checked>
-                                    <span>🚌 Buses</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" class="vehicle-class" value="truck" checked>
-                                    <span>🚚 Camiones</span>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Process Button -->
-                        <button id="processBtn" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 font-bold py-3 px-4 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            🎬 Iniciar Conteo
-                        </button>
-                        
-                        <!-- Progress -->
-                        <div id="progressContainer" class="hidden">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span>Procesando...</span>
-                                <span id="progressPercent">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div id="progressFill" class="progress-fill" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Header -->
+    <header class="border-b" style="background: linear-gradient(135deg, #f8f8f8, #e8e8e8); border-color: var(--blue);">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img src="{{ url_for('static', filename='images/LOGO-VERTICAL-TECNM.png') }}" alt="TEC" style="max-height: 44px;">
+                <div>
+                    <h1 class="text-2xl font-bold" style="color: var(--blue);">DataTrack</h1>
+                    <p class="text-gray-500 text-xs">Aforo de Vehiculos</p>
                 </div>
             </div>
-            
-            <!-- Results Section -->
-            <div id="resultsSection" class="hidden mt-8">
-                <div class="bg-gray-800 rounded-lg shadow-lg p-6">
-                    <h2 class="text-2xl font-bold mb-6 border-b border-gray-600 pb-3">📊 Resultados</h2>
-                    
-                    <!-- Summary Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4">
-                            <p class="text-gray-100 text-sm">Total de Vehículos</p>
-                            <p id="totalVehicles" class="text-3xl font-bold">0</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4">
-                            <p class="text-gray-100 text-sm">Carros</p>
-                            <p id="carCount" class="text-3xl font-bold">0</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-4">
-                            <p class="text-gray-100 text-sm">Motocicletas</p>
-                            <p id="motoCount" class="text-3xl font-bold">0</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4">
-                            <p class="text-gray-100 text-sm">Otros</p>
-                            <p id="otherCount" class="text-3xl font-bold">0</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Results Details -->
-                    <div id="resultsDetails" class="mb-6"></div>
-                    
-                    <!-- Charts and Details -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-gray-700 rounded-lg p-4">
-                            <h3 class="font-bold mb-4">Distribución por Tipo</h3>
-                            <canvas id="typeChart"></canvas>
-                        </div>
-                        <div class="bg-gray-700 rounded-lg p-4">
-                            <h3 class="font-bold mb-4">Resumen de Regiones</h3>
-                            <div id="regionsSummary" class="space-y-2 max-h-96 overflow-y-auto"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Export Buttons -->
-                    <div class="mt-6 flex gap-3">
-                        <button id="exportCsvBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded font-medium transition">
-                            📥 Descargar CSV
-                        </button>
-                        <button id="exportJsonBtn" class="flex-1 bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded font-medium transition">
-                            📊 Descargar JSON
-                        </button>
-                        <button id="clearResultsBtn" class="flex-1 bg-red-500 hover:bg-red-600 px-4 py-2 rounded font-medium transition">
-                            ✕ Limpiar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </main>
+            <div id="hardwareInfo" class="text-right text-xs" style="color: var(--blue);"></div>
+        </div>
+    </header>
 
-        <!-- Footer -->
-        <footer class="bg-gray-800 border-t border-gray-700 mt-8">
-            <div class="max-w-7xl mx-auto px-4 py-6 text-center text-gray-400 text-sm">
-                <p>DataTrack © 2024 | Sistema de Conteo de Vehículos con YOLO11</p>
-                <p class="mt-2">Hecho por Fernando Andrés Alemán Escobedo</p>
-            </div>
-        </footer>
+    <!-- Tabs -->
+    <div class="max-w-7xl mx-auto w-full px-4 pt-6">
+        <div class="flex gap-6 border-b border-gray-700 mb-6">
+            <button id="tabProcess" class="pb-2 text-sm font-medium tab-active cursor-pointer" onclick="app.switchTab('process')">Nuevo Analisis</button>
+            <button id="tabHistory" class="pb-2 text-sm font-medium tab-inactive cursor-pointer" onclick="app.switchTab('history')">Historial</button>
+            <button id="tabStorage" class="pb-2 text-sm font-medium tab-inactive cursor-pointer" onclick="app.switchTab('storage')">Almacenamiento</button>
+        </div>
     </div>
+
+    <!-- Tab: Nuevo Analisis -->
+    <main id="panelProcess" class="flex-1 max-w-7xl mx-auto w-full px-4 pb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Video Panel -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="card overflow-hidden">
+                    <!-- Upload -->
+                    <div id="uploadArea" class="video-box border-2 border-dashed border-gray-600 hover:border-blue-400 transition flex items-center justify-center cursor-pointer" style="border-radius: 0.75rem;">
+                        <div class="text-center p-8">
+                            <div class="text-4xl mb-2">&#128249;</div>
+                            <p class="text-gray-300 text-sm">Arrastra un video o haz clic para subir uno nuevo</p>
+                            <p class="text-gray-500 text-xs mt-1">MP4, AVI, MOV, MKV (max. 2GB)</p>
+                            <button id="openVideoPickerBtn" class="mt-3 btn-gold px-4 py-1.5 rounded text-xs" onclick="event.stopPropagation(); app.openVideoPicker();">
+                                Usar video ya subido
+                            </button>
+                        </div>
+                        <input type="file" id="videoInput" accept="video/*" class="hidden">
+                    </div>
+
+                    <!-- Video -->
+                    <div id="videoDisplay" class="video-box hidden relative">
+                        <video id="videoElement" controls></video>
+                        <canvas id="drawingCanvas" class="hidden absolute top-0 left-0 w-full h-full" style="cursor:crosshair;"></canvas>
+                    </div>
+                </div>
+
+                <!-- Video info bar -->
+                <div id="videoInfoBar" class="hidden flex justify-between items-center card px-4 py-2 text-xs text-gray-400">
+                    <span id="videoInfoName" class="truncate max-w-xs font-medium text-gray-200"></span>
+                    <div class="flex gap-2 shrink-0 ml-2">
+                        <button onclick="app.openVideoPicker()" class="btn-gold px-2 py-1 rounded text-xs">Cambiar</button>
+                        <button onclick="app.resetVideoArea()" class="btn-danger px-2 py-1 rounded text-xs">&#x2715;</button>
+                    </div>
+                </div>
+
+                <!-- Drawing tools -->
+                <div id="videoControls" class="hidden card p-4 space-y-3">
+                    <p class="text-sm font-medium text-gray-300">Areas de Deteccion</p>
+                    <div class="flex gap-2 flex-wrap">
+                        <button id="drawRectBtn" class="btn-primary px-3 py-2 rounded text-sm flex-1 min-w-[110px]">Rectangulo</button>
+                        <button id="drawPolyBtn" class="btn-gold px-3 py-2 rounded text-sm flex-1 min-w-[110px]">Poligono</button>
+                        <button id="clearPolygonBtn" class="btn-danger px-3 py-2 rounded text-sm flex-1 min-w-[90px]">Limpiar</button>
+                    </div>
+                    <div>
+                        <span class="text-xs text-gray-400">Areas: <span id="polygonCount" class="text-yellow-400 font-bold">0</span></span>
+                        <div id="polygonsList" class="space-y-1 mt-1 max-h-32 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Panel -->
+            <div class="card p-5 h-fit space-y-4">
+                <h3 class="font-bold border-b border-gray-600 pb-2 text-sm">Configuracion</h3>
+
+                <div>
+                    <label class="block text-xs font-medium mb-1 text-gray-300">Modelo YOLO</label>
+                    <select id="modelSelector" class="w-full bg-gray-700 text-gray-100 px-3 py-2 rounded border border-gray-600 text-sm focus:border-blue-400 focus:outline-none">
+                        <option value="yolo11n">Nano (Rapido)</option>
+                        <option value="yolo11s">Small (Balanceado)</option>
+                        <option value="yolo11m">Medium (Preciso)</option>
+                        <option value="yolo11l">Large (Muy preciso)</option>
+                    </select>
+                    <p class="text-gray-500 text-xs mt-1" id="modelInfo">Elige segun precision vs velocidad</p>
+                    <button id="downloadModelBtn" class="w-full mt-2 btn-gold px-3 py-1.5 rounded text-xs">Descargar Modelo</button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium mb-1 text-gray-300">Confianza: <span id="confValue">0.50</span></label>
+                    <input type="range" id="confidenceSlider" min="0" max="100" value="50" class="w-full">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium mb-1 text-gray-300">Skip de Frames: <span id="skipValue">1</span></label>
+                    <input type="range" id="frameSkipSlider" min="1" max="10" value="1" class="w-full">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium mb-1 text-gray-300">Vehiculos</label>
+                    <div class="grid grid-cols-2 gap-1 text-xs">
+                        <label class="flex items-center gap-1"><input type="checkbox" class="vehicle-class" value="car" checked> Carros</label>
+                        <label class="flex items-center gap-1"><input type="checkbox" class="vehicle-class" value="motorcycle" checked> Motos</label>
+                        <label class="flex items-center gap-1"><input type="checkbox" class="vehicle-class" value="bus" checked> Buses</label>
+                        <label class="flex items-center gap-1"><input type="checkbox" class="vehicle-class" value="truck" checked> Camiones</label>
+                    </div>
+                </div>
+
+                <button id="processBtn" class="w-full font-bold py-2.5 rounded-lg text-sm transition" style="background: linear-gradient(135deg, var(--blue), var(--gold)); color: #fff;">
+                    Iniciar Conteo
+                </button>
+
+                <div id="progressContainer" class="hidden space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span>Procesando...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-track"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="resultsSection" class="hidden mt-6 card p-6 fade-in">
+            <h2 class="text-lg font-bold mb-4 border-b border-gray-600 pb-2">Resultados</h2>
+            <div id="resultsDetails" class="mb-4"></div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="bg-gray-700/50 rounded-lg p-4">
+                    <h3 class="font-medium text-sm mb-3">Distribucion por Tipo</h3>
+                    <canvas id="typeChart"></canvas>
+                </div>
+                <div class="bg-gray-700/50 rounded-lg p-4">
+                    <h3 class="font-medium text-sm mb-3">Desglose por Region</h3>
+                    <div id="regionsSummary" class="space-y-2 max-h-80 overflow-y-auto text-sm"></div>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-2 flex-wrap">
+                <button id="generateVideoBtn" class="btn-gold px-4 py-2 rounded text-sm flex-1 min-w-[130px]">Video Anotado</button>
+                <button id="exportCsvBtn" class="btn-primary px-4 py-2 rounded text-sm flex-1 min-w-[130px]">Descargar CSV</button>
+                <button id="exportJsonBtn" class="btn-gold px-4 py-2 rounded text-sm flex-1 min-w-[130px]">Descargar JSON</button>
+                <button id="clearResultsBtn" class="btn-danger px-4 py-2 rounded text-sm flex-1 min-w-[130px]">Limpiar</button>
+            </div>
+            <div id="videoProgressContainer" class="hidden mt-3 space-y-1">
+                <div class="flex justify-between text-xs">
+                    <span>Generando video...</span>
+                    <span id="videoProgressPercent">0%</span>
+                </div>
+                <div class="progress-track"><div id="videoProgressFill" class="progress-fill" style="width:0%"></div></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Tab: Historial -->
+    <div id="panelHistory" class="hidden flex-1 max-w-7xl mx-auto w-full px-4 pb-8">
+        <div class="card p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Historial de Analisis</h2>
+                <div class="flex gap-2">
+                    <input id="searchRecords" type="text" placeholder="Buscar por nombre..." class="bg-gray-700 text-sm px-3 py-1.5 rounded border border-gray-600 focus:border-blue-400 focus:outline-none w-48">
+                    <button id="refreshRecords" class="btn-primary px-3 py-1.5 rounded text-sm">Actualizar</button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-gray-400 text-xs border-b border-gray-700">
+                            <th class="text-left py-2 px-2">Video</th>
+                            <th class="text-left py-2 px-2">Fecha</th>
+                            <th class="text-left py-2 px-2">Modelo</th>
+                            <th class="text-center py-2 px-2">Vehiculos</th>
+                            <th class="text-center py-2 px-2">Estado</th>
+                            <th class="text-right py-2 px-2">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        <tr><td colspan="6" class="text-center py-8 text-gray-500">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p id="emptyRecords" class="hidden text-center py-8 text-gray-500 text-sm">No hay registros aun. Procesa tu primer video.</p>
+        </div>
+
+        <!-- Record Detail Modal -->
+        <div id="recordDetail" class="hidden mt-4 card p-5 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-sm" id="recordDetailTitle">Detalle</h3>
+                <button onclick="app.closeRecordDetail()" class="text-gray-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <div id="recordDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Seleccionar video existente -->
+    <div id="videoPickerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.7);">
+        <div class="card w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 class="font-bold">Seleccionar video subido</h3>
+                <button onclick="app.closeVideoPicker()" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+            <div class="p-3 border-b border-gray-700">
+                <input id="videoPickerSearch" type="text" placeholder="Buscar por nombre..." class="w-full bg-gray-700 text-sm px-3 py-2 rounded border border-gray-600 focus:border-blue-400 focus:outline-none">
+            </div>
+            <div class="overflow-y-auto flex-1">
+                <table class="w-full text-sm">
+                    <thead class="sticky top-0" style="background: var(--card);">
+                        <tr class="text-gray-500 text-xs border-b border-gray-700">
+                            <th class="text-left py-2 px-3">Video</th>
+                            <th class="text-center py-2 px-3">Peso</th>
+                            <th class="text-center py-2 px-3">Fecha</th>
+                            <th class="text-right py-2 px-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="videoPickerList">
+                        <tr><td colspan="4" class="text-center py-8 text-gray-500">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Almacenamiento -->
+    <div id="panelStorage" class="hidden flex-1 max-w-7xl mx-auto w-full px-4 pb-8 space-y-4">
+
+        <!-- Resumen -->
+        <div class="card p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">Almacenamiento</h2>
+                <button id="refreshStorage" class="btn-primary px-3 py-1.5 rounded text-sm">Actualizar</button>
+            </div>
+            <div id="storageSummary" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <div class="bg-gray-700/50 rounded p-3">
+                    <div class="text-xl font-bold text-blue-400" id="storTotalMb">-</div>
+                    <div class="text-xs text-gray-400">Total videos</div>
+                </div>
+                <div class="bg-gray-700/50 rounded p-3">
+                    <div class="text-xl font-bold text-red-400" id="storOrphanMb">-</div>
+                    <div class="text-xs text-gray-400">Sin registro</div>
+                </div>
+                <div class="bg-gray-700/50 rounded p-3">
+                    <div class="text-xl font-bold text-yellow-400" id="storResultsMb">-</div>
+                    <div class="text-xs text-gray-400">Resultados JSON</div>
+                </div>
+                <div class="bg-gray-700/50 rounded p-3">
+                    <div class="text-xl font-bold text-gray-300" id="storFileCount">-</div>
+                    <div class="text-xs text-gray-400">Archivos</div>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-2">
+                <button id="cleanOrphansBtn" class="btn-danger px-4 py-2 rounded text-sm">Limpiar huerfanos</button>
+                <p class="text-xs text-gray-500 self-center">Elimina videos que no tienen registro en el historial</p>
+            </div>
+            <p id="storageMsg" class="hidden mt-2 text-sm text-green-400"></p>
+        </div>
+
+        <!-- Lista de archivos -->
+        <div class="card p-5">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="font-bold text-sm">Archivos en uploads/</h3>
+                <div class="flex gap-2 items-center">
+                    <label class="flex items-center gap-1 text-xs text-gray-400 cursor-pointer">
+                        <input type="checkbox" id="showOrphansOnly"> Solo huerfanos
+                    </label>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="text-gray-500 border-b border-gray-700">
+                            <th class="text-left py-2 px-2">Nombre del archivo</th>
+                            <th class="text-center py-2 px-2">Peso</th>
+                            <th class="text-center py-2 px-2">Fecha</th>
+                            <th class="text-center py-2 px-2">Estado</th>
+                            <th class="text-right py-2 px-2">Accion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="storageTableBody">
+                        <tr><td colspan="5" class="text-center py-6 text-gray-500">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t mt-auto" style="background: var(--card); border-color: var(--border);">
+        <div class="max-w-7xl mx-auto px-4 py-4 text-center">
+            <p class="text-gray-400 text-xs">Tecnologico Nacional de Mexico - Instituto Tecnologico de Tijuana</p>
+            <p class="text-gray-500 text-xs mt-1">Desarrollado por Fernando Andres Aleman Escobedo</p>
+        </div>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
