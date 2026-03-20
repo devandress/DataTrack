@@ -84,12 +84,17 @@ class VideoProcessor:
             'total_vehicles': 0,
             'vehicles_by_type': {},
             'vehicles_by_region': defaultdict(lambda: {'count': 0, 'types': {}, 'unique_ids': set(), 'types_unique_ids': defaultdict(set)}),
+            'od_matrix': {},
             'timeline': []
         }
-        
+
         frame_count = 0
         vehicle_ids = set()
         vehicle_ids_by_type = defaultdict(set)
+
+        # Origin-Destination tracking per vehicle
+        vehicle_first_region = {}  # track_id -> first region name seen
+        vehicle_last_region = {}   # track_id -> last region name seen
         
         # Pre-compilar regiones si existen
         polygon_points = None
@@ -154,6 +159,10 @@ class VideoProcessor:
                                     results['vehicles_by_region'][rname]['count'] += 1
                                     results['vehicles_by_region'][rname]['unique_ids'].add(track_id)
                                     results['vehicles_by_region'][rname]['types_unique_ids'][vehicle_type].add(track_id)
+                                    # O-D: record first and last region
+                                    if track_id not in vehicle_first_region:
+                                        vehicle_first_region[track_id] = rname
+                                    vehicle_last_region[track_id] = rname
                             if in_any_region:
                                 vehicle_ids.add(track_id)
                                 vehicle_ids_by_type[vehicle_type].add(track_id)
@@ -190,7 +199,15 @@ class VideoProcessor:
             del results['vehicles_by_region'][region_key]['types_unique_ids']
         
         results['vehicles_by_region'] = dict(results['vehicles_by_region'])
-        
+
+        # Build Origin-Destination matrix
+        od_matrix = defaultdict(lambda: defaultdict(int))
+        for track_id, origin in vehicle_first_region.items():
+            dest = vehicle_last_region.get(track_id, origin)
+            od_matrix[origin][dest] += 1
+        # Convert to serializable dict
+        results['od_matrix'] = {o: dict(d) for o, d in od_matrix.items()}
+
         return results
     
     @staticmethod

@@ -20,7 +20,7 @@ import socket
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESULTS_FOLDER'] = 'results'
-app.config['MAX_CONTENT_LENGTH'] = 2000 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024 * 1024  # 10GB
 
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
 
@@ -564,6 +564,22 @@ def export_csv(job_id):
     for region, data in results.get('vehicles_by_region', {}).items():
         types_str = ', '.join([f"{t}: {c}" for t, c in data.get('types', {}).items()])
         writer.writerow([region, data.get('unique_count', 0), data.get('count', 0), types_str])
+
+    # Matriz Origen-Destino
+    od_matrix = results.get('od_matrix', {})
+    if od_matrix:
+        writer.writerow([])
+        writer.writerow(['Matriz Origen-Destino'])
+        all_regions = set(od_matrix.keys())
+        for o in od_matrix:
+            all_regions.update(od_matrix[o].keys())
+        all_regions = sorted(all_regions)
+        writer.writerow(['Origen \\ Destino'] + all_regions)
+        for origin in all_regions:
+            row = [origin]
+            for dest in all_regions:
+                row.append(od_matrix.get(origin, {}).get(dest, 0))
+            writer.writerow(row)
 
     csv_bytes = output.getvalue().encode('utf-8')
     return send_file(

@@ -601,21 +601,21 @@ class DataTrackApp {
         const details = document.getElementById('resultsDetails');
         details.innerHTML = `
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                <div class="bg-gray-700/50 rounded p-3">
-                    <div class="text-2xl font-bold text-blue-400">${r.total_vehicles || 0}</div>
-                    <div class="text-xs text-gray-400">Vehiculos Unicos</div>
+                <div class="rounded-lg p-4" style="background:#1e293b; border:1px solid #334155;">
+                    <div class="text-2xl font-bold" style="color:#60a5fa;">${r.total_vehicles || 0}</div>
+                    <div class="text-xs" style="color:#94a3b8;">Vehiculos Unicos</div>
                 </div>
-                <div class="bg-gray-700/50 rounded p-3">
-                    <div class="text-2xl font-bold text-yellow-400">${r.total_frames || 0}</div>
-                    <div class="text-xs text-gray-400">Frames</div>
+                <div class="rounded-lg p-4" style="background:#1e293b; border:1px solid #334155;">
+                    <div class="text-2xl font-bold" style="color:#FFD700;">${r.total_frames || 0}</div>
+                    <div class="text-xs" style="color:#94a3b8;">Frames</div>
                 </div>
-                <div class="bg-gray-700/50 rounded p-3">
-                    <div class="text-2xl font-bold text-green-400">${r.fps ? r.fps.toFixed(1) : 0}</div>
-                    <div class="text-xs text-gray-400">FPS</div>
+                <div class="rounded-lg p-4" style="background:#1e293b; border:1px solid #334155;">
+                    <div class="text-2xl font-bold" style="color:#4ade80;">${r.fps ? r.fps.toFixed(1) : 0}</div>
+                    <div class="text-xs" style="color:#94a3b8;">FPS</div>
                 </div>
-                <div class="bg-gray-700/50 rounded p-3">
-                    <div class="text-2xl font-bold text-purple-400">${r.width || 0}x${r.height || 0}</div>
-                    <div class="text-xs text-gray-400">Resolucion</div>
+                <div class="rounded-lg p-4" style="background:#1e293b; border:1px solid #334155;">
+                    <div class="text-2xl font-bold" style="color:#c084fc;">${r.width || 0}x${r.height || 0}</div>
+                    <div class="text-xs" style="color:#94a3b8;">Resolucion</div>
                 </div>
             </div>
         `;
@@ -626,6 +626,9 @@ class DataTrackApp {
 
         // Regions
         this.updateRegionsSummary(r.vehicles_by_region || {});
+
+        // Origin-Destination matrix
+        this.updateODMatrix(r.od_matrix || {});
     }
 
     updateChart(vehicleTypes) {
@@ -644,17 +647,107 @@ class DataTrackApp {
     updateRegionsSummary(regions) {
         const el = document.getElementById('regionsSummary');
         if (Object.keys(regions).length === 0) {
-            el.innerHTML = '<p class="text-gray-500 text-xs">Sin regiones de deteccion</p>';
+            el.innerHTML = '<p class="text-sm" style="color:#94a3b8;">Sin regiones de deteccion</p>';
             return;
         }
         el.innerHTML = Object.entries(regions).map(([region, data]) => {
             const total = Object.values(data.types || {}).reduce((s, c) => s + c, 0) || data.unique_count || data.count || 0;
-            return `<div class="bg-gray-600/50 p-2.5 rounded">
-                <p class="font-medium text-blue-300 text-xs">${region}</p>
-                <p class="font-bold text-white">${total} vehiculos</p>
-                <p class="text-xs text-gray-300 mt-1">${Object.entries(data.types || {}).map(([t, c]) => `${t}: ${c}`).join(' | ')}</p>
+            return `<div class="p-3 rounded-lg" style="background:#151d2b; border:1px solid #2d3748;">
+                <p class="font-semibold text-sm" style="color:#60a5fa;">${region}</p>
+                <p class="font-bold text-white text-lg">${total} vehiculos</p>
+                <p class="text-xs mt-1" style="color:#cbd5e1;">${Object.entries(data.types || {}).map(([t, c]) => `${t}: ${c}`).join(' | ')}</p>
             </div>`;
         }).join('');
+    }
+
+    updateODMatrix(odMatrix) {
+        const el = document.getElementById('odMatrixSummary');
+        if (!el) return;
+        const origins = Object.keys(odMatrix);
+        if (origins.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 text-sm">Sin datos de origen-destino (se necesitan 2+ areas)</p>';
+            return;
+        }
+        const allRegions = new Set(origins);
+        origins.forEach(o => Object.keys(odMatrix[o]).forEach(d => allRegions.add(d)));
+        const regions = [...allRegions];
+
+        // Table
+        let html = '<div class="overflow-x-auto">';
+        html += '<table class="w-full text-sm" style="border:1px solid #334155; border-radius:0.5rem; overflow:hidden; border-collapse:separate; border-spacing:0;">';
+        html += '<thead style="background:#1e293b;"><tr>';
+        html += '<th class="py-3 px-4 text-left text-gray-300 font-semibold" style="border-bottom:2px solid #475569;">Origen / Destino</th>';
+        regions.forEach(r => {
+            html += `<th class="py-3 px-4 text-center text-gray-300 font-semibold" style="border-bottom:2px solid #475569;">${this.escapeHtml(r)}</th>`;
+        });
+        html += '<th class="py-3 px-4 text-center font-semibold" style="border-bottom:2px solid #475569; color:#FFD700;">Total</th>';
+        html += '</tr></thead><tbody>';
+
+        regions.forEach((origin, ri) => {
+            const rowBg = ri % 2 === 0 ? 'background:#1a2332;' : 'background:#151d2b;';
+            html += `<tr style="${rowBg}">`;
+            html += `<td class="py-2.5 px-4 font-semibold" style="color:#60a5fa; border-bottom:1px solid #2d3748;">${this.escapeHtml(origin)}</td>`;
+            let rowTotal = 0;
+            regions.forEach(dest => {
+                const count = (odMatrix[origin] && odMatrix[origin][dest]) || 0;
+                rowTotal += count;
+                let cellStyle = 'border-bottom:1px solid #2d3748;';
+                if (origin === dest) {
+                    cellStyle += 'background:#2d3748; color:#94a3b8;';
+                } else if (count > 0) {
+                    cellStyle += 'background:#14532d; color:#4ade80;';
+                } else {
+                    cellStyle += 'color:#4b5563;';
+                }
+                html += `<td class="py-2.5 px-4 text-center font-bold" style="${cellStyle}">${count > 0 ? count : '-'}</td>`;
+            });
+            html += `<td class="py-2.5 px-4 text-center font-bold" style="border-bottom:1px solid #2d3748; color:#FFD700;">${rowTotal}</td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+
+        // Flow summary
+        const flows = [];
+        regions.forEach(origin => {
+            regions.forEach(dest => {
+                const count = (odMatrix[origin] && odMatrix[origin][dest]) || 0;
+                if (count > 0) flows.push({ origin, dest, count, same: origin === dest });
+            });
+        });
+        flows.sort((a, b) => b.count - a.count);
+
+        if (flows.length > 0) {
+            html += '<div class="mt-4">';
+            html += '<p class="text-sm font-semibold text-gray-300 mb-2">Resumen de flujos</p>';
+            html += '<div class="space-y-1.5">';
+            flows.forEach(f => {
+                if (f.same) {
+                    html += `<div class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm" style="background:#1e293b; border:1px solid #334155;">
+                        <span style="color:#94a3b8; font-size:1rem;">&#8635;</span>
+                        <span class="text-gray-300 font-medium">${this.escapeHtml(f.origin)}</span>
+                        <span class="text-gray-500 text-xs">(permanecen en area)</span>
+                        <span class="ml-auto font-bold text-gray-200">${f.count}</span>
+                    </div>`;
+                } else {
+                    html += `<div class="flex items-center gap-3 px-4 py-2 rounded-lg text-sm" style="background:#14532d; border:1px solid #166534;">
+                        <span style="color:#4ade80; font-size:1rem;">&#8594;</span>
+                        <span style="color:#60a5fa;" class="font-medium">${this.escapeHtml(f.origin)}</span>
+                        <span style="color:#4ade80;">&#8594;</span>
+                        <span style="color:#FFD700;" class="font-medium">${this.escapeHtml(f.dest)}</span>
+                        <span class="ml-auto font-bold text-white">${f.count} vehiculo${f.count !== 1 ? 's' : ''}</span>
+                    </div>`;
+                }
+            });
+            html += '</div></div>';
+        }
+
+        // Legend
+        html += '<div class="mt-3 flex gap-4 text-xs" style="color:#94a3b8;">';
+        html += '<div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded" style="background:#14532d; border:1px solid #166534;"></span> Se desplazan entre areas</div>';
+        html += '<div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded" style="background:#2d3748; border:1px solid #475569;"></span> Permanecen en su area</div>';
+        html += '</div>';
+
+        el.innerHTML = html;
     }
 
     // --- Export ---
@@ -784,47 +877,101 @@ class DataTrackApp {
 
             content.innerHTML = `
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center mb-4">
-                    <div class="bg-gray-700/50 rounded p-3">
-                        <div class="text-xl font-bold text-blue-400">${r.total_vehicles || 0}</div>
-                        <div class="text-xs text-gray-400">Vehiculos</div>
+                    <div class="rounded-lg p-3" style="background:#1e293b; border:1px solid #334155;">
+                        <div class="text-xl font-bold" style="color:#60a5fa;">${r.total_vehicles || 0}</div>
+                        <div class="text-xs" style="color:#94a3b8;">Vehiculos</div>
                     </div>
-                    <div class="bg-gray-700/50 rounded p-3">
-                        <div class="text-xl font-bold text-yellow-400">${r.total_frames || 0}</div>
-                        <div class="text-xs text-gray-400">Frames</div>
+                    <div class="rounded-lg p-3" style="background:#1e293b; border:1px solid #334155;">
+                        <div class="text-xl font-bold" style="color:#FFD700;">${r.total_frames || 0}</div>
+                        <div class="text-xs" style="color:#94a3b8;">Frames</div>
                     </div>
-                    <div class="bg-gray-700/50 rounded p-3">
-                        <div class="text-xl font-bold text-green-400">${r.fps ? Number(r.fps).toFixed(1) : 0}</div>
-                        <div class="text-xs text-gray-400">FPS</div>
+                    <div class="rounded-lg p-3" style="background:#1e293b; border:1px solid #334155;">
+                        <div class="text-xl font-bold" style="color:#4ade80;">${r.fps ? Number(r.fps).toFixed(1) : 0}</div>
+                        <div class="text-xs" style="color:#94a3b8;">FPS</div>
                     </div>
-                    <div class="bg-gray-700/50 rounded p-3">
-                        <div class="text-xl font-bold text-purple-400">${this.formatDuration(r.duration)}</div>
-                        <div class="text-xs text-gray-400">Duracion</div>
+                    <div class="rounded-lg p-3" style="background:#1e293b; border:1px solid #334155;">
+                        <div class="text-xl font-bold" style="color:#c084fc;">${this.formatDuration(r.duration)}</div>
+                        <div class="text-xs" style="color:#94a3b8;">Duracion</div>
                     </div>
                 </div>
                 ${Object.keys(types).length > 0 ? `
                     <div class="mb-3">
-                        <p class="text-xs font-medium text-gray-400 mb-1">Por tipo:</p>
+                        <p class="text-sm font-semibold mb-2" style="color:#cbd5e1;">Por tipo:</p>
                         <div class="flex gap-2 flex-wrap">
-                            ${Object.entries(types).map(([t, c]) => `<span class="bg-gray-700 px-2 py-1 rounded text-xs">${t}: <strong>${c}</strong></span>`).join('')}
+                            ${Object.entries(types).map(([t, c]) => `<span class="px-3 py-1.5 rounded-lg text-xs font-medium" style="background:#1e293b; border:1px solid #334155; color:#e2e8f0;">${t}: <strong>${c}</strong></span>`).join('')}
                         </div>
                     </div>
                 ` : ''}
                 ${Object.keys(regions).length > 0 ? `
                     <div>
-                        <p class="text-xs font-medium text-gray-400 mb-1">Por region:</p>
+                        <p class="text-sm font-semibold mb-2" style="color:#cbd5e1;">Por region:</p>
                         ${Object.entries(regions).map(([reg, data]) => {
                             const total = Object.values(data.types || {}).reduce((s, c) => s + c, 0) || data.unique_count || 0;
-                            return `<div class="bg-gray-600/50 p-2 rounded mb-1 text-xs">
-                                <span class="text-blue-300">${reg}</span>: ${total} vehiculos
-                                (${Object.entries(data.types || {}).map(([t, c]) => `${t}: ${c}`).join(', ')})
+                            return `<div class="p-3 rounded-lg mb-1.5 text-xs" style="background:#151d2b; border:1px solid #2d3748;">
+                                <span class="font-semibold" style="color:#60a5fa;">${reg}</span>: <strong class="text-white">${total} vehiculos</strong>
+                                <span style="color:#94a3b8;">(${Object.entries(data.types || {}).map(([t, c]) => `${t}: ${c}`).join(', ')})</span>
                             </div>`;
                         }).join('')}
                     </div>
                 ` : ''}
-                <div class="mt-3 flex gap-2">
-                    <button onclick="app.exportRecordCSV('${id}')" class="btn-gold px-3 py-1.5 rounded text-xs">Descargar CSV</button>
+                <div id="recordODMatrix" class="mt-3"></div>
+                <div class="mt-4 flex gap-2">
+                    <button onclick="app.exportRecordCSV('${id}')" class="btn-gold px-4 py-2 rounded-lg text-sm font-medium">Descargar CSV</button>
                 </div>
             `;
+
+            // Render O-D matrix in record detail
+            const odMatrix = results.od_matrix || {};
+            if (Object.keys(odMatrix).length > 0) {
+                const odEl = document.getElementById('recordODMatrix');
+                const allR = new Set(Object.keys(odMatrix));
+                Object.keys(odMatrix).forEach(o => Object.keys(odMatrix[o]).forEach(d => allR.add(d)));
+                const rList = [...allR];
+                let h = '<p class="text-sm font-semibold mb-2" style="color:#cbd5e1;">Origen-Destino:</p>';
+                h += '<div class="overflow-x-auto">';
+                h += '<table class="w-full text-xs" style="border:1px solid #334155; border-radius:0.5rem; overflow:hidden; border-collapse:separate; border-spacing:0;">';
+                h += '<thead style="background:#1e293b;"><tr>';
+                h += '<th class="py-2.5 px-3 text-left font-semibold" style="color:#cbd5e1; border-bottom:2px solid #475569;">O / D</th>';
+                rList.forEach(r => { h += `<th class="py-2.5 px-3 text-center font-semibold" style="color:#cbd5e1; border-bottom:2px solid #475569;">${this.escapeHtml(r)}</th>`; });
+                h += '</tr></thead><tbody>';
+                rList.forEach((origin, ri) => {
+                    const rowBg = ri % 2 === 0 ? 'background:#1a2332;' : 'background:#151d2b;';
+                    h += `<tr style="${rowBg}"><td class="py-2 px-3 font-semibold" style="color:#60a5fa; border-bottom:1px solid #2d3748;">${this.escapeHtml(origin)}</td>`;
+                    rList.forEach(dest => {
+                        const c = (odMatrix[origin] && odMatrix[origin][dest]) || 0;
+                        let cellStyle = 'border-bottom:1px solid #2d3748;';
+                        if (origin === dest) cellStyle += 'background:#2d3748; color:#94a3b8;';
+                        else if (c > 0) cellStyle += 'background:#14532d; color:#4ade80;';
+                        else cellStyle += 'color:#4b5563;';
+                        h += `<td class="py-2 px-3 text-center font-bold" style="${cellStyle}">${c > 0 ? c : '-'}</td>`;
+                    });
+                    h += '</tr>';
+                });
+                h += '</tbody></table></div>';
+                // Flow summary for record detail
+                const flows = [];
+                rList.forEach(origin => {
+                    rList.forEach(dest => {
+                        const c = (odMatrix[origin] && odMatrix[origin][dest]) || 0;
+                        if (c > 0 && origin !== dest) flows.push({ origin, dest, count: c });
+                    });
+                });
+                flows.sort((a, b) => b.count - a.count);
+                if (flows.length > 0) {
+                    h += '<div class="mt-3 space-y-1.5">';
+                    flows.forEach(f => {
+                        h += `<div class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs" style="background:#14532d; border:1px solid #166534;">
+                            <span style="color:#4ade80;">&#8594;</span>
+                            <span class="font-medium" style="color:#60a5fa;">${this.escapeHtml(f.origin)}</span>
+                            <span style="color:#4ade80;">&#8594;</span>
+                            <span class="font-medium" style="color:#FFD700;">${this.escapeHtml(f.dest)}</span>
+                            <span class="ml-auto font-bold text-white">${f.count} vehiculo${f.count !== 1 ? 's' : ''}</span>
+                        </div>`;
+                    });
+                    h += '</div>';
+                }
+                odEl.innerHTML = h;
+            }
 
             document.getElementById('recordDetail').classList.remove('hidden');
             document.getElementById('recordDetail').scrollIntoView({ behavior: 'smooth' });

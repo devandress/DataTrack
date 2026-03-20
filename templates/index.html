@@ -45,7 +45,6 @@
     <header class="border-b" style="background: linear-gradient(135deg, #f8f8f8, #e8e8e8); border-color: var(--blue);">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <img src="{{ url_for('static', filename='images/LOGO-VERTICAL-TECNM.png') }}" alt="TEC" style="max-height: 44px;">
                 <div>
                     <h1 class="text-2xl font-bold" style="color: var(--blue);">DataTrack</h1>
                     <p class="text-gray-500 text-xs">Aforo de Vehiculos</p>
@@ -76,7 +75,7 @@
                         <div class="text-center p-8">
                             <div class="text-4xl mb-2">&#128249;</div>
                             <p class="text-gray-300 text-sm">Arrastra un video o haz clic para subir uno nuevo</p>
-                            <p class="text-gray-500 text-xs mt-1">MP4, AVI, MOV, MKV (max. 2GB)</p>
+                            <p class="text-gray-500 text-xs mt-1">MP4, AVI, MOV, MKV (max. 10GB)</p>
                             <button id="openVideoPickerBtn" class="mt-3 btn-gold px-4 py-1.5 rounded text-xs" onclick="event.stopPropagation(); app.openVideoPicker();">
                                 Usar video ya subido
                             </button>
@@ -170,14 +169,19 @@
             <h2 class="text-lg font-bold mb-4 border-b border-gray-600 pb-2">Resultados</h2>
             <div id="resultsDetails" class="mb-4"></div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div class="bg-gray-700/50 rounded-lg p-4">
-                    <h3 class="font-medium text-sm mb-3">Distribucion por Tipo</h3>
+                <div class="rounded-lg p-5" style="background:#1e293b; border:1px solid #334155;">
+                    <h3 class="font-semibold text-sm mb-3 text-gray-200">Distribucion por Tipo</h3>
                     <canvas id="typeChart"></canvas>
                 </div>
-                <div class="bg-gray-700/50 rounded-lg p-4">
-                    <h3 class="font-medium text-sm mb-3">Desglose por Region</h3>
+                <div class="rounded-lg p-5" style="background:#1e293b; border:1px solid #334155;">
+                    <h3 class="font-semibold text-sm mb-3 text-gray-200">Desglose por Region</h3>
                     <div id="regionsSummary" class="space-y-2 max-h-80 overflow-y-auto text-sm"></div>
                 </div>
+            </div>
+            <div class="mt-4 rounded-lg p-5" style="background:#1e293b; border:1px solid #334155;">
+                <h3 class="font-semibold text-sm mb-1 text-gray-200">Matriz Origen-Destino</h3>
+                <p class="text-xs mb-4" style="color:#94a3b8;">Muestra cuantos vehiculos viajan de un area a otra</p>
+                <div id="odMatrixSummary"></div>
             </div>
             <div class="mt-4 flex gap-2 flex-wrap">
                 <button id="generateVideoBtn" class="btn-gold px-4 py-2 rounded text-sm flex-1 min-w-[130px]">Video Anotado</button>
@@ -332,8 +336,7 @@
     <!-- Footer -->
     <footer class="border-t mt-auto" style="background: var(--card); border-color: var(--border);">
         <div class="max-w-7xl mx-auto px-4 py-4 text-center">
-            <p class="text-gray-400 text-xs">Tecnologico Nacional de Mexico - Instituto Tecnologico de Tijuana</p>
-            <p class="text-gray-500 text-xs mt-1">Desarrollado por Fernando Andres Aleman Escobedo</p>
+            <p class="text-gray-400 text-xs">Desarrollado por <a href="https://www.linkedin.com/in/fernando-andres-aleman-escobedo" target="_blank" rel="noopener" class="font-medium hover:underline" style="color:#60a5fa;">Fernando Andres Aleman Escobedo</a></p>
         </div>
     </footer>
 
